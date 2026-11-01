@@ -243,8 +243,8 @@ test/             Unit tests
 ## Links
 
 - Blog post: [Digital Signage Folder Sync: Update Screens by Dropping Files in a Folder](https://easysignage.com/blog/26/sync-folder-to-digital-signage/)
-- EasySignage Open API reference: open it from the CMS under **Settings → API Keys**, or go to
-  [api-docs.easysignage.io](https://api-docs.easysignage.io/)
+- Open API overview: [How to Automate Digital Signage with EasySignage Open API](https://easysignage.com/blog/26/digital-signage-api-integration/)
+- Creating an API key: [API Keys help article](https://easysignage.com/help/account-settings/digital-signage-api-keys/). The full API reference opens from the CMS under **Settings → API Keys → Open API Docs**.
 - SDK: [`@easysignage/sdk` on npm](https://www.npmjs.com/package/@easysignage/sdk)
 - Companion demo: [Digital-Signage-Sales-driven-promotions](https://github.com/easysignage/Digital-Signage-Sales-driven-promotions),
   which turns a promotion on and off across screens from a sales number
