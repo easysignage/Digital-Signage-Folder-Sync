@@ -9,6 +9,8 @@ and the official [`@easysignage/sdk`](https://www.npmjs.com/package/@easysignage
 works here as a **headless CMS**: the folder is the source of truth, and EasySignage stores the
 content and delivers it to the screens.
 
+> **Blog post:** [Digital Signage Folder Sync: Update Screens by Dropping Files in a Folder](https://easysignage.com/blog/26/sync-folder-to-digital-signage/) explains the use case, who it is for and how to roll it out.
+
 ## What it does
 
 | You do this in the folder | The app does this | API call |
@@ -240,6 +242,7 @@ test/             Unit tests
 
 ## Links
 
+- Blog post: [Digital Signage Folder Sync: Update Screens by Dropping Files in a Folder](https://easysignage.com/blog/26/sync-folder-to-digital-signage/)
 - EasySignage Open API reference: open it from the CMS under **Settings → API Keys**, or go to
   [api-docs.easysignage.io](https://api-docs.easysignage.io/)
 - SDK: [`@easysignage/sdk` on npm](https://www.npmjs.com/package/@easysignage/sdk)
