@@ -15,7 +15,7 @@ const trace = new AsyncLocalStorage<Trace>();
 // A fetch that notes each HTTP request made inside `call()`, so the log can show the real route
 // behind every SDK method. Only the path is kept; query strings (e.g. signed upload URLs) are not.
 const tracingFetch: typeof fetch = async (input, init) => {
-  const res = await fetch(input, withOneContentType(init));
+  const res = await fetch(input, init);
   const t = trace.getStore();
   if (t) {
     const url = new URL(input instanceof Request ? input.url : String(input));
@@ -28,18 +28,6 @@ const tracingFetch: typeof fetch = async (input, init) => {
   }
   return res;
 };
-
-// Workaround for @easysignage/sdk 0.1.0: its file upload can send Content-Type twice (once from
-// the signed upload target, once its own), which storage rejects with 403 SignatureDoesNotMatch.
-// Keeps the last one. Safe to remove once the SDK fix is released.
-function withOneContentType(init?: RequestInit): RequestInit | undefined {
-  const headers = init?.headers;
-  if (!headers || headers instanceof Headers || Array.isArray(headers)) return init;
-  const keys = Object.keys(headers).filter((k) => k.toLowerCase() === "content-type");
-  if (keys.length < 2) return init;
-  const kept = Object.fromEntries(Object.entries(headers).filter(([k]) => !keys.slice(0, -1).includes(k)));
-  return { ...init, headers: kept };
-}
 
 export const client = new EasySignage({ apiKey: config.apiKey, baseURL: config.baseURL, fetch: tracingFetch });
 
@@ -73,12 +61,7 @@ export function codeOf(err: unknown): string | undefined {
   return err instanceof APIError ? err.code : undefined;
 }
 
-type MediaListParams = NonNullable<Parameters<typeof client.media.iterate>[0]>;
-
-/**
- * Every media item in a playlist, in play order. The API's `playlist` filter is newer than the
- * published SDK types, so it is passed through as an extra query parameter.
- */
+/** Every media item in a playlist, in play order. */
 export function playlistMedia(playlistId: string) {
-  return client.media.iterate({ playlist: playlistId } as MediaListParams);
+  return client.media.iterate({ playlist: playlistId });
 }
