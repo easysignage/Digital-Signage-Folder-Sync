@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Folder sync</title>
+<style>
+  :root {
+    --bg: #0f1218; --panel: #171b23; --line: #262c38; --text: #e8ebf1; --muted: #8b93a5;
+    --accent: #4f8cff; --ok: #22c55e; --warn: #f59e0b; --err: #ef4444;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, Segoe UI, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 18px 24px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  header .dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; margin-left: auto; }
+  header .dot.live { background: var(--ok); }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 20px; padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; padding: 16px; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; min-width: 0; }
+  .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+  .path { font-family: var(--mono); font-size: 14px; margin: 6px 0 2px; word-break: break-all; }
+  .playlist { color: var(--muted); font-size: 13px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+  button { font: inherit; font-weight: 600; border-radius: 8px; border: 1px solid var(--line); background: #1f2430; color: var(--text); padding: 10px 16px; cursor: pointer; }
+  button:hover { border-color: #3a4252; }
+  button.primary { background: var(--accent); border-color: var(--accent); }
+  .banner { margin-top: 16px; padding: 12px 14px; border-radius: 8px; background: #172036; border: 1px solid #24324f; color: #b9cdf7; display: none; }
+  .banner.show { display: block; }
+  .files { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .file { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 8px; border-radius: 10px; background: #12161d; border: 1px solid var(--line); }
+  .thumb { width: 96px; height: 54px; border-radius: 6px; object-fit: cover; background: #222836; display: grid; place-items: center; color: var(--muted); font-size: 12px; }
+  .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta { color: var(--muted); font-size: 12px; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; background: #2a3140; color: var(--muted); }
+  .chip.uploading { background: #1e3a8a; color: #dbe6ff; }
+  .chip.stored { background: #3b2f0b; color: #fde68a; }
+  .chip.published { background: #14532d; color: #bbf7d0; }
+  .chip.error { background: #4c1515; color: #fecaca; }
+  .empty { color: var(--muted); padding: 28px 8px; text-align: center; border: 1px dashed var(--line); border-radius: 10px; margin-top: 16px; }
+  .last { color: var(--muted); font-size: 13px; margin-top: 12px; }
+  .log { height: calc(100vh - 170px); min-height: 420px; overflow-y: auto; font-family: var(--mono); font-size: 13px; }
+  .entry { padding: 9px 2px; border-bottom: 1px solid var(--line); }
+  .entry .t { color: var(--muted); margin-right: 8px; }
+  .entry .call { color: #9cc2ff; font-weight: 600; }
+  .entry.warn .msg { color: var(--warn); } .entry.error .msg, .entry.error .call { color: var(--err); }
+  .entry.info .msg { color: var(--muted); font-family: system-ui, sans-serif; }
+  .entry .req { color: #a7b0c2; margin-left: 18px; }
+  .entry .res { color: #6f7a8f; margin-left: 18px; white-space: pre-wrap; word-break: break-all; }
+  .entry .ms { color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Folder sync</h1>
+  <span class="sub">EasySignage Open API demo</span>
+  <span class="dot" id="live" title="Connection to the local server"></span>
+</header>
+<main>
+  <section class="panel">
+    <div class="label">Watched folder</div>
+    <div class="path" id="folder">–</div>
+    <div class="playlist">→ playlist <span id="playlist">–</span></div>
+    <div class="row">
+      <button class="primary" id="open">Open folder</button>
+      <button id="sync">Sync now</button>
+      <button id="reset">Reset</button>
+    </div>
+    <div class="banner" id="banner"></div>
+    <div class="files" id="files"></div>
+    <div class="last" id="last"></div>
+  </section>
+
+  <section class="panel">
+    <div class="label" style="margin-bottom:8px">API log</div>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (v) => String(v).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const isImage = (n) => /\.(png|jpe?g|gif|webp)$/i.test(n);
+let current = null;
+let thumbVersion = Date.now();
+
+function render(s) {
+  current = s;
+  $("folder").textContent = s.folder;
+  $("playlist").textContent = s.playlistId || "(not set)";
+  const files = $("files");
+  if (s.files.length === 0) {
+    files.innerHTML = `<div class="empty">The folder is empty. Drag images or videos into it.</div>`;
+  } else {
+    files.innerHTML = s.files.map((f) => `
+      <div class="file">
+        ${isImage(f.name)
+          ? `<img class="thumb" src="/content/${encodeURIComponent(f.name)}?v=${thumbVersion}" alt="">`
+          : `<div class="thumb">video</div>`}
+        <div style="min-width:0">
+          <div class="name">${esc(f.name)}</div>
+          <div class="meta">${f.error ? esc(f.error) : f.mediaId ? "media " + esc(f.mediaId) : (f.size / 1024).toFixed(0) + " KB"}</div>
+        </div>
+        <span class="chip ${f.status}">${f.status}</span>
+      </div>`).join("");
+  }
+  if (s.lastPublish) {
+    const outcome = s.lastPublish.outcome === "published" ? "published to screens" : s.lastPublish.outcome.replaceAll("_", " ");
+    $("last").textContent = `Last publish ${new Date(s.lastPublish.time).toLocaleTimeString()}: ${outcome}`;
+  }
+  tickBanner();
+}
+
+function tickBanner() {
+  const s = current;
+  const b = $("banner");
+  if (s?.syncing) {
+    b.textContent = "Syncing with EasySignage…";
+    b.classList.add("show");
+  } else if (s?.pendingUntil) {
+    const left = Math.max(0, Math.ceil((s.pendingUntil - Date.now()) / 1000));
+    b.textContent = `Changes noticed. Syncing in ${left}s, as one batch…`;
+    b.classList.add("show");
+  } else {
+    b.classList.remove("show");
+  }
+}
+setInterval(tickBanner, 250);
+
+function addLog(e) {
+  const el = document.createElement("div");
+  el.className = "entry " + e.level;
+  let html = `<span class="t">${new Date(e.time).toLocaleTimeString()}</span>`;
+  if (e.call) html += `<span class="call">client.${esc(e.call)}</span>`;
+  if (e.durationMs !== undefined) html += ` <span class="ms">${e.durationMs} ms</span>`;
+  if (e.message) html += `${e.call ? "<br>" : ""}<span class="msg">${e.call ? "&nbsp;&nbsp;&nbsp;" : ""}${esc(e.message)}</span>`;
+  for (const r of e.requests ?? []) html += `<div class="req">${esc(r)}</div>`;
+  if (e.result !== undefined && e.result !== null) html += `<div class="res">${esc(JSON.stringify(e.result))}</div>`;
+  el.innerHTML = html;
+  const log = $("log");
+  const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+  log.appendChild(el);
+  if (atBottom) log.scrollTop = log.scrollHeight;
+  if (e.message?.startsWith("changed:")) thumbVersion = Date.now();
+}
+
+const post = (path) => fetch(path, { method: "POST" });
+$("open").onclick = () => post("/api/open-folder");
+$("sync").onclick = () => post("/api/sync");
+$("reset").onclick = () => post("/api/reset");
+
+const events = new EventSource("/api/events");
+events.addEventListener("state", (m) => render(JSON.parse(m.data)));
+events.addEventListener("log", (m) => addLog(JSON.parse(m.data)));
+events.onopen = () => { $("live").classList.add("live"); $("log").innerHTML = ""; };
+events.onerror = () => $("live").classList.remove("live");
+</script>
+</body>
+</html>

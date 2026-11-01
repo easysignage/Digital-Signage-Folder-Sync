@@ -1,0 +1,8 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.sync-state.json
+.DS_Store
+content/*
+!content/.gitkeep

@@ -1,0 +1,29 @@
+{
+  "name": "digital-signage-folder-sync",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Keep an EasySignage playlist in sync with a local folder and publish it to the screens playing it, using the EasySignage Open API.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "setup": "tsx scripts/setup.ts",
+    "reset": "tsx scripts/reset.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts"
+  },
+  "dependencies": {
+    "@easysignage/sdk": "^0.1.0",
+    "chokidar": "^4.0.3",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.3"
+  }
+}
