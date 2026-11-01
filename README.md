@@ -245,3 +245,7 @@ test/             Unit tests
 - SDK: [`@easysignage/sdk` on npm](https://www.npmjs.com/package/@easysignage/sdk)
 - Companion demo: [Digital-Signage-Sales-driven-promotions](https://github.com/easysignage/Digital-Signage-Sales-driven-promotions),
   which turns a promotion on and off across screens from a sales number
+
+## License
+
+[MIT](LICENSE)
